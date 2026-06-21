@@ -1,0 +1,8 @@
+[providers]
+php = {}
+
+[variables]
+NIXPACKS_PHP_VERSION = "8.3"
+
+[phases.setup]
+nixPkgs = ["php82", "php82Extensions.contentType", "php82Extensions.gd", "php82Extensions.mbstring", "php82Extensions.openssl", "php82Extensions.pdo", "php82Extensions.tokenizer", "php82Extensions.xml", "php82Extensions.zip"]
