@@ -67,16 +67,34 @@
         }
         window.snap.pay(token, {
             onSuccess: function(result) {
-                alert("Pembayaran cicilan berhasil!");
-                window.location.href = "{{ route('dashboard') }}";
+                konfirmasiPembayaran();
             },
             onPending: function(result) {
-                alert("Pembayaran cicilan sedang diproses.");
-                window.location.href = "{{ route('dashboard') }}";
+                konfirmasiPembayaran();
             },
             onError: function(result) {
                 alert("Pembayaran cicilan gagal.");
             }
+        });
+    }
+
+    function konfirmasiPembayaran() {
+        fetch("{{ url('/installment/set-success') }}/{{ $installment->id }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert("Pembayaran cicilan berhasil dikonfirmasi!");
+            window.location.href = "{{ route('dashboard') }}";
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            window.location.href = "{{ route('dashboard') }}";
         });
     }
 </script>

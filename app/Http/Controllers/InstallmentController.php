@@ -51,6 +51,48 @@ class InstallmentController extends Controller
         }
     }
 
+    public function setSuccessInstantly($installmentId)
+    {
+        $installment = Installment::with('transaction')->findOrFail($installmentId);
+
+        if ($installment->transaction->user_id !== auth()->id() && auth()->user()?->role !== 'admin') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki akses ke cicilan ini.'
+            ], 403);
+        }
+
+        if ($installment->payment_status === 'success') {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Cicilan ini sudah lunas.'
+            ]);
+        }
+
+        $installment->update([
+            'payment_status' => 'success',
+            'paid_amount'     => $installment->amount,
+            'paid_at'         => now(),
+        ]);
+
+        $transaction = $installment->transaction;
+        $transaction->increment('paid_installments');
+        $transaction->increment('amount_paid', $installment->amount);
+
+        if ($transaction->paid_installments >= $transaction->installment_count) {
+            $transaction->update(['payment_status' => 'success']);
+            $property = \App\Models\Property::find($transaction->property_id);
+            if ($property && $property->status !== 'sold') {
+                $property->update(['status' => 'sold']);
+            }
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Cicilan berhasil dikonfirmasi!'
+        ]);
+    }
+
     public static function getInstallmentOptions(float $totalAmount): array
     {
         $options = [];

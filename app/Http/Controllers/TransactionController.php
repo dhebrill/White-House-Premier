@@ -218,26 +218,9 @@ class TransactionController extends Controller
                     'payment_status' => 'success',
                     'amount_paid' => $transaction->gross_amount,
                 ]);
-                if ($transaction->is_installment && $transaction->installment_count > 1) {
-                    $firstInstallment = $transaction->installments()->where('installment_number', 1)->first();
-                    if ($firstInstallment) {
-                        $firstInstallment->update([
-                            'payment_status' => 'success',
-                            'paid_amount' => $firstInstallment->amount,
-                            'paid_at' => now(),
-                        ]);
-                        $transaction->increment('paid_installments');
-                    }
-                }
-            }
-        } elseif ($transactionStatus == 'settlement') {
-            $transaction->update([
-                'payment_status' => 'success',
-                'amount_paid' => $transaction->gross_amount,
-            ]);
             if ($transaction->is_installment && $transaction->installment_count > 1) {
                 $firstInstallment = $transaction->installments()->where('installment_number', 1)->first();
-                if ($firstInstallment) {
+                if ($firstInstallment && $firstInstallment->payment_status !== 'success') {
                     $firstInstallment->update([
                         'payment_status' => 'success',
                         'paid_amount' => $firstInstallment->amount,
@@ -246,6 +229,23 @@ class TransactionController extends Controller
                     $transaction->increment('paid_installments');
                 }
             }
+        }
+    } elseif ($transactionStatus == 'settlement') {
+        $transaction->update([
+            'payment_status' => 'success',
+            'amount_paid' => $transaction->gross_amount,
+        ]);
+        if ($transaction->is_installment && $transaction->installment_count > 1) {
+            $firstInstallment = $transaction->installments()->where('installment_number', 1)->first();
+            if ($firstInstallment && $firstInstallment->payment_status !== 'success') {
+                $firstInstallment->update([
+                    'payment_status' => 'success',
+                    'paid_amount' => $firstInstallment->amount,
+                    'paid_at' => now(),
+                ]);
+                $transaction->increment('paid_installments');
+            }
+        }
         } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire'])) {
             $transaction->update(['payment_status' => 'failed']);
         } elseif ($transactionStatus == 'pending') {

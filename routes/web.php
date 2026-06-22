@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
 
     // Cicilan (Installment)
     Route::get('/installment/pay/{installmentId}', [InstallmentController::class, 'payInstallment'])->name('installment.pay');
+    Route::post('/installment/set-success/{installmentId}', [InstallmentController::class, 'setSuccessInstantly'])->name('installment.set-success');
 
     // Visit Schedule (User)
     Route::get('/visit-schedule', [AuthController::class, 'visitSchedules'])->name('visit-schedule.index');
